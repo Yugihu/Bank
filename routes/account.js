@@ -1,4 +1,9 @@
+const { hash, compare } = require('bcrypt')
+const { Accounts } = require('../mongo/account-model')
+
 const router = require('express').Router()
+
+
 /**
  * @openapi
  * components:
@@ -42,28 +47,23 @@ const router = require('express').Router()
  */
 
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     const { username, password } = req.body
-    if (!username || !password) {
-        return res.status(400).send({ err: "invalid credantials" })
+
+    try {
+        const hashedPass = await hash(password, 10)
+        const userToBeSaved = new Accounts({ username, password: hashedPass })
+        await userToBeSaved.save()
+        return res.status(201).send({ msg: `user was created : ${username}` })
+    } catch (err) {
+        console.log(err)
+        res.status(400)
+        if (err.code === 11000) {
+            res.send({ err: 'username already taken' })
+        } else
+            res.send({ err: 'username and password required' })
     }
 
-    if (users.some(user => user.username == username)) {
-        return res.status(400).send({ err: "username is already exist" })
-    }
-
-    const userId = v4()
-    users.push({
-        id: userId,
-        username: username,
-        password: password,
-        lastVisit: new Date(),
-        cart: [],
-        role: "user"
-    })
-
-    console.log(`user was created : ${username} with id:${userId}`)
-    return res.status(201).send({ msg: `user was created : ${username} with id:${userId}` })
 
 })
 
@@ -89,26 +89,36 @@ router.post('/register', (req, res) => {
  */
 
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { username, password } = req.body
 
     if (!username || !password) {
         return res.status(400).send({ err: "invalid credantials" })
     }
 
-    const user = users.find(user => user.username == username)
+    try {
 
-    if (!user) {
-        return res.status(400).send({ err: "user not found" })
+        const account = await Accounts.findOne({ username: username })
+
+        if (!account) {
+            return res.status(400).send({ err: "user not found" })
+        }
+
+        if (!await compare(password, account.password)) {
+            return res.status(400).send({ err: "password incorrect" })
+        }
+
+        req.session.account = {
+            username,
+            id: account._id
+        }
+
+        res.send({ msg: `logged successfuly, welcome  ${username}` })
+
+    } catch (err) {
+        console.log(err)
+        return res.status(500).send({ err: err })
     }
-
-    if (user.password != password) {
-        return res.status(400).send({ err: "password incorrect" })
-    }
-
-    req.session.user = user
-
-    res.send({ msg: `logged successfuly, welcome  ${user.username}` })
 
 })
 /**
@@ -125,9 +135,14 @@ router.post('/login', (req, res) => {
 *     responses:
 *       200:
 *         description: logout from your account.
+*       401:
+*         description: you need to logout in order to login.
+*     
+
 */
 router.delete('/logout', (req, res) => {
+    const name = req.session.account.username
     req.session.destroy()
-    res.send({ msg: `logged out succesfuly` })
+    res.send({ msg: `${name} is logged out succesfuly` })
 })
 module.exports = router
