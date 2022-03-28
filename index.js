@@ -2,10 +2,14 @@ const exp = require('express')
 const session = require('express-session')
 const swaggerJsDoc = require('swagger-jsdoc')
 const swaggerUi = require('swagger-ui-express')
+const { connectTomongo } = require('./mongo/config')
 
 //const fs = require('fs/promises')
 
 const app = exp()
+
+connectTomongo()
+
 const openApiSpec = swaggerJsDoc({
     definition: {
         openapi: "3.0.0",
