@@ -1,4 +1,5 @@
 const { hash, compare } = require('bcrypt')
+const { onlyLogged } = require('../middlewares/onlyLogged')
 const { Accounts } = require('../mongo/account-model')
 
 const router = require('express').Router()
@@ -140,7 +141,7 @@ router.post('/login', async (req, res) => {
 *     
 
 */
-router.delete('/logout', (req, res) => {
+router.delete('/logout', onlyLogged, (req, res) => {
     const name = req.session.account.username
     req.session.destroy()
     res.send({ msg: `${name} is logged out succesfuly` })

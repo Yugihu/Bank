@@ -1,3 +1,4 @@
+const { onlyLogged } = require('../middlewares/onlyLogged')
 const { Accounts } = require('../mongo/account-model')
 
 const router = require('express').Router()
@@ -15,7 +16,7 @@ const router = require('express').Router()
  *         description: please login first.
  *     
  */
-router.get('/history', async (req, res) => {
+router.get('/history', onlyLogged, async (req, res) => {
     try {
         const account = await Accounts.findById(req.session.account.id).populate({
             path: 'actions.to',
@@ -43,7 +44,7 @@ router.get('/history', async (req, res) => {
  *         description: please login first.
  *     
  */
-router.get('/accounts', async (req, res) => {
+router.get('/accounts', onlyLogged, async (req, res) => {
     try {
         const accounts = await Accounts.find({}, { username: 1 })
         res.send(accounts)

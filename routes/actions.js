@@ -1,3 +1,4 @@
+const { onlyLogged } = require('../middlewares/onlyLogged')
 const { Accounts } = require('../mongo/account-model')
 
 const router = require('express').Router()
@@ -47,7 +48,7 @@ const router = require('express').Router()
  *         description: missing info in the request body or amount in negativ value, invalid destination or limited account.
  *     
  */
-router.post('/', async (req, res) => {
+router.post('/',onlyLogged, async (req, res) => {
     try {
         const { type, amount, to } = req.body
 
