@@ -13,7 +13,6 @@ const actionSchema = new Schema({
         ref: 'account',
         require: false
     },
-
     date: {
         type: Date,
         default: Date.now
